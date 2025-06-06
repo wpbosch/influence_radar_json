@@ -24,6 +24,9 @@ jobs:
       - name: Run the fetch script
         run: python fetch_channel_stats.py
 
+      - name: Generate top 100 JSON
+        run: python generate_top_100_channels.py
+
       - name: Commit updated JSON using GitHub API
         uses: actions/github-script@v7
         with:
@@ -82,7 +85,6 @@ jobs:
               sha: newCommit.sha
             });
 
-        - name: Generate top 100 JSON
-          run: python generate_top_100_channels.py
+        
 
 
