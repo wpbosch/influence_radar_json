@@ -2,7 +2,7 @@ name: Update YouTube Channel Stats
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs daily at 5AM South African time
+    - cron: '0 0 * * *'  # ⏰ Runs daily at midnight UTC
   workflow_dispatch:
 
 jobs:
@@ -33,58 +33,55 @@ jobs:
           github-token: ${{ secrets.GH_TOKEN }}
           script: |
             const fs = require('fs');
-            const path = 'top_youtube_channels_stats.json';
-            const content = fs.readFileSync(path, 'utf8');
-            const encoded = Buffer.from(content).toString('base64');
+            const files = ['top_youtube_channels_stats.json', 'top_100_youtube_channels.json'];
 
-            const { data: refData } = await github.rest.git.getRef({
+            const treeItems = [];
+            for (const file of files) {
+              const content = fs.readFileSync(file, 'utf8');
+              const blob = await github.rest.git.createBlob({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                content: Buffer.from(content).toString('base64'),
+                encoding: 'base64'
+              });
+              treeItems.push({
+                path: file,
+                mode: '100644',
+                type: 'blob',
+                sha: blob.data.sha
+              });
+            }
+
+            const ref = await github.rest.git.getRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: 'heads/main'
             });
 
-            const { data: latestCommit } = await github.rest.git.getCommit({
+            const commit = await github.rest.git.getCommit({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              commit_sha: refData.object.sha
+              commit_sha: ref.data.object.sha
             });
 
-            const { data: blobData } = await github.rest.git.createBlob({
+            const tree = await github.rest.git.createTree({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              content: encoded,
-              encoding: 'base64'
+              base_tree: commit.data.tree.sha,
+              tree: treeItems
             });
 
-            const { data: treeData } = await github.rest.git.createTree({
+            const newCommit = await github.rest.git.createCommit({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              base_tree: latestCommit.tree.sha,
-              tree: [
-                {
-                  path,
-                  mode: '100644',
-                  type: 'blob',
-                  sha: blobData.sha
-                }
-              ]
-            });
-
-            const { data: newCommit } = await github.rest.git.createCommit({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              message: 'Daily update of YouTube stats',
-              tree: treeData.sha,
-              parents: [refData.object.sha]
+              message: 'Daily update: full and top 100 stats',
+              tree: tree.data.sha,
+              parents: [ref.data.object.sha]
             });
 
             await github.rest.git.updateRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: 'heads/main',
-              sha: newCommit.sha
+              sha: newCommit.data.sha
             });
-
-        
-
-
