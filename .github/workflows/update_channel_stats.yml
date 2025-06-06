@@ -26,14 +26,17 @@ jobs:
 
       - name: Commit updated JSON
         env:
-          GH_TOKEN: ${{secrets.GH_TOKEN}}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
+          git fetch origin
+          git pull origin main
           git add top_youtube_channels_stats.json
           git commit -m "Daily update of YouTube stats" || echo "No changes to commit"
-          git push
+          git push origin main
+
 
 
 
