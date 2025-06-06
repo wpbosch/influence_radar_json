@@ -35,6 +35,7 @@ for i in range(0, len(channel_ids), 50):
             "subscribers": int(item['statistics'].get('subscriberCount', 0)),
             "videos": int(item['statistics'].get('videoCount', 0)),
             "channel_url": f"https://www.youtube.com/channel/{item['id']}"
+            "views": int(channel_data["statistics"].get("viewCount", 0)),
         }
         all_stats.append(stats)
     time.sleep(1)
