@@ -83,6 +83,6 @@ jobs:
             });
 
         - name: Generate top 100 JSON
-        run: python generate_top_100_channels.py
+          run: python generate_top_100_channels.py
 
 
